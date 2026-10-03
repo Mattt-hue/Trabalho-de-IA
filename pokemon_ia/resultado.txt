@@ -1,0 +1,64 @@
+Mapa 42x150 | origem (23, 36) | destino (1, 15)
+
+[Tarefa 1] Busca local (10 execuções por algoritmo)
+  alg     melhor  execuções     média   desvio  tempo(s)
+  hc    1484.675         10  1485.061    0.395      24.0
+  sa    1486.184         10  1490.131    2.771      14.6
+  ga    1508.768         10  1529.580   10.191       5.0
+  referência (DP exata, ótimo global das batalhas): 1484.675
+  plano usado: melhor execução de 'hc' = 1484.675 min (= ótimo global)
+
+[Tarefa 2] A* sobre (ginásio atual, conjunto visitado), peso=2.0
+  A*: custo 1275 | expandidos 438 | gerados 3,491 | 0.06s | ótimo garantido: não (peso>1)
+  Certificando otimalidade com Held-Karp exato (numpy, ~1 min, ~0,8 GB RAM)...
+  Held-Karp: custo ótimo global = 1210 (34s)
+  -> A* ponderado ficou 65 min (5.4%) acima do ótimo; usando a rota ótima.
+
+================ RESULTADO FINAL ================
+Ordem de visita e Pokémon usados em cada batalha:
+   # Gym  nº  dific  Pokémon                                      tempo  rota acum.  bat. acum.
+   1   O  20    155  Caterpie, Weedle                             67.39         159       67.39
+   2   I  15    110  Pikachu                                      73.33         323      140.72
+   3   J  16    120  Pikachu                                      80.00         338      220.72
+   4   K  17    130  Pikachu                                      86.67         407      307.39
+   5   N  19    150  Pikachu                                     100.00         561      407.39
+   6   L  18    140  Pikachu                                      93.33         722      500.72
+   7   H  14    100  Pikachu                                      66.67         764      567.39
+   8   G  13     95  Bulbassauro                                  67.86         801      635.25
+   9   E  12     90  Bulbassauro                                  64.29         843      699.53
+  10   C  10     80  Bulbassauro                                  57.14         866      756.68
+  11   D  11     85  Bulbassauro                                  60.71         887      817.39
+  12   B   9     75  Bulbassauro                                  53.57         901      870.96
+  13   8   7     65  Rattata                                      50.00         919      920.96
+  14   9   8     70  Bulbassauro                                  50.00         956      970.96
+  15   T  24    180  Rattata, Caterpie                            72.00        1016     1042.96
+  16   S  23    170  Rattata, Weedle                              70.83        1026     1113.80
+  17   5   4     50  Rattata                                      38.46        1032     1152.26
+  18   6   5     55  Rattata                                      42.31        1043     1194.57
+  19   7   6     60  Rattata                                      46.15        1055     1240.72
+  20   4   3     45  Caterpie                                     37.50        1069     1278.22
+  21   3   2     40  Caterpie                                     33.33        1119     1311.55
+  22   2   1     35  Weedle                                       31.82        1164     1343.37
+  23   P  21    160  Caterpie, Weedle                             69.57        1184     1412.94
+  24   Q  22    165  Caterpie, Weedle                             71.74        1195     1484.68
+
+Energia final dos Pokémon:
+  Pikachu      0  (hibernando)
+  Bulbassauro  0  (hibernando)
+  Rattata      0  (hibernando)
+  Caterpie     0  (hibernando)
+  Weedle       1  
+
+Custo das batalhas : 1484.68 min
+Custo da rota      : 1210 min  [Held-Karp (ótimo exato)]
+CUSTO TOTAL        : 2694.68 min
+A*: 438 estados expandidos, 3,491 gerados
+
+Garantia de otimalidade:
+  Rota: custo 1210 == ótimo global certificado por Held-Karp (1210): ÓTIMA.
+  Batalhas: 1484.675 vs DP exata 1484.675 -> ÓTIMO GLOBAL.
+  Rota e batalhas são independentes (o tempo de um ginásio só depende dos Pokémon e da dificuldade, não da ordem),
+  logo C_total ótimo = rota ótima + batalhas ótimas.
+
+Gerando visualização (A* célula a célula em cada perna)...
+  resultado.png e resultado.gif gerados.
