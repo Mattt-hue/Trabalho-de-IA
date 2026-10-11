@@ -130,7 +130,7 @@ def _mst(W, nos):
     return total
 
 
-def astar_ginasios(pc, peso=1.0, limite_estados=None, tempo_max=None, log=None):
+def astar_ginasios(pc, peso=1.0, limite_estados=None, tempo_max=None, log=None, cb=None, cb_cada=1):
     """
     Estado   : (atual, mascara)  -> `atual` = índice do ponto onde o agente está
                (0 = origem, 1..24 = ginásios, 25 = destino); `mascara` = bits dos
@@ -194,6 +194,14 @@ def astar_ginasios(pc, peso=1.0, limite_estados=None, tempo_max=None, log=None):
         expandidos += 1
         if len(ordem_expansao) < 200000:
             ordem_expansao.append(est)
+        if cb and expandidos % cb_cada == 0:          # progresso ao vivo (visualização)
+            cam, e = [], est
+            while e is not None:
+                cam.append(e[0])
+                e = pai[e]
+            cam.reverse()
+            cb(dict(expandidos=expandidos, abertos=len(pq), f=f, g=g, rota=cam,
+                    prof=bin(mask).count("1")))
         if log and expandidos % 200000 == 0:
             log(f"   ... {expandidos:,} expandidos, {len(pq):,} na fronteira, f={f:.1f}")
         if limite_estados and expandidos > limite_estados:
@@ -217,7 +225,7 @@ def astar_ginasios(pc, peso=1.0, limite_estados=None, tempo_max=None, log=None):
 
 
 # ------------------------------------------------ certificado de otimalidade
-def held_karp(pc, log=None):
+def held_karp(pc, log=None, cb=None):
     """
     Programação dinâmica exata (Held-Karp) sobre (último ginásio, conjunto visitado).
     Usa numpy e ~0,8 GB de RAM (tabela 2^24 x 24 em int16). Serve para CERTIFICAR
@@ -252,6 +260,8 @@ def held_karp(pc, log=None):
                 dp[ms[blk], j] = np.minimum(v.min(axis=1), INF).astype(np.int16)
         if log:
             log(f"   Held-Karp: camada {k}/{NG}")
+        if cb:
+            cb(k, NG, len(camada))
     ultimo = dp[FULL - 1].astype(np.int32) + D[1:NG + 1, DEST]
     j = int(ultimo.argmin())
     custo = int(ultimo[j])

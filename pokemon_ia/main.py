@@ -11,10 +11,14 @@ Exemplos:
   python main.py --sem-certificado     # só o A* ponderado (rápido, não garante ótimo)
   python main.py --visual              # gera resultado.png e resultado.gif
   python main.py --ascii               # mapa no console
+  python main.py --terminal            # ANIMAÇÃO no terminal: busca local ao vivo + A* + agente andando
+  python main.py --terminal --velocidade 3   # mais rápido (0.5 = mais lento)
+  python main.py --quadros             # grava passo_a_passo.txt (um quadro por perna, para o relatório)
 """
 import argparse
 import random
 import statistics as st
+import sys
 import time
 
 import batalhas as B
@@ -27,29 +31,89 @@ def log(msg):
     print(msg, flush=True)
 
 
+def viva(msg):
+    """Escreve uma linha que se atualiza no lugar (progresso ao vivo), sem quebrar a linha."""
+    import shutil
+    largura = shutil.get_terminal_size((160, 40)).columns - 4
+    sys.stdout.write("\r\033[K  " + msg[:max(20, largura)])
+    sys.stdout.flush()
+
+
+def fixa(msg):
+    """Substitui a linha viva por uma linha definitiva."""
+    sys.stdout.write("\r\033[K" + msg + "\n")
+    sys.stdout.flush()
+
+
 # ----------------------------------------------------------------- Tarefa 1
-def experimento_busca_local(execucoes, algoritmos):
-    """Executa cada algoritmo `execucoes` vezes. Devolve {alg: dict(estatísticas, melhor)}."""
+def experimento_busca_local(execucoes, algoritmos, vivo=False, velocidade=1.0):
+    """Executa cada algoritmo `execucoes` vezes. Devolve {alg: dict(estatísticas, melhor)}.
+    Com vivo=True mostra TODAS as tentativas (reinícios, iterações, gerações) em tempo real."""
     out = {}
+    nomes_alg = {"hc": "Hill Climbing (20 reinícios por execução)",
+                 "sa": "Simulated Annealing (400 mil iterações por execução)",
+                 "ga": "Algoritmo Genético (80 indivíduos x 400 gerações por execução)"}
     for nome in algoritmos:
         fn = B.ALGORITMOS[nome]
         res, melhor = [], None
         t0 = time.time()
+        if vivo:
+            log(f"\n  >>> {nomes_alg[nome]}")
         for k in range(execucoes):
-            rng = random.Random(config.SEMENTE + 1000 * k + hash(nome) % 97)
-            sol, c = fn(rng)
+            rng = random.Random(config.SEMENTE + 1000 * k + sum(map(ord, nome)))
+            cb = None
+            if vivo:
+                def cb(msg, k=k):
+                    mg = f"{melhor[1]:.3f}" if melhor else "-"
+                    viva(f"exec {k + 1:>2}/{execucoes} | {msg} | melhor das execuções: {mg}")
+                    time.sleep(0.003 / max(velocidade, 1e-6))
+            sol, c = fn(rng, cb=cb) if cb else fn(rng)
             res.append(c)
-            if melhor is None or c < melhor[1]:
+            novo = melhor is None or c < melhor[1]
+            if novo:
                 melhor = (sol, c)
+            if vivo:
+                fixa(f"  exec {k + 1:>2}/{execucoes}: custo final {c:9.3f} min "
+                     f"{'<-- novo melhor' if novo else ''}")
         out[nome] = dict(melhor=melhor, custos=res, n=execucoes, tempo=time.time() - t0,
                          media=st.mean(res), desvio=st.pstdev(res) if len(res) > 1 else 0.0)
     return out
 
 
 # ----------------------------------------------------------------- Tarefa 2
-def planejar_rota(pc, peso, certificar):
+def planejar_rota(pc, peso, certificar, vivo=False, velocidade=1.0):
     log(f"\n[Tarefa 2] A* sobre (ginásio atual, conjunto visitado), peso={peso}")
-    r = astar_ginasios(pc, peso=peso, limite_estados=3_000_000, tempo_max=120, log=log)
+    if vivo:
+        import visual
+        visual.ativar_ansi()
+        nome = lambda r: " > ".join(pc.nomes[i] for i in r)
+        if peso != 1.0:
+            log("\n  Tentativa 1: A* EXATO (peso=1), limite de 8 s de busca")
+            ult = {}
+
+            def cb1(d):
+                ult.update(d)
+                viva(f"A* exato | expandidos {d['expandidos']:>9,} | fronteira {d['abertos']:>9,} | "
+                     f"f={d['f']:7.1f} | ginásios no caminho parcial: {d['prof']:>2}/24")
+            r1 = astar_ginasios(pc, peso=1.0, tempo_max=8, cb=cb1, cb_cada=500)
+            if r1 is None:
+                fixa(f"  A* exato interrompido: {ult.get('expandidos', 0):,} estados expandidos em 8 s e "
+                     f"ainda longe do objetivo (o espaço tem até 24 x 2^24 estados).")
+            else:
+                fixa(f"  A* exato terminou: custo {r1['custo']} (ótimo garantido).")
+            log(f"\n  Tentativa 2: A* PONDERADO (peso={peso}) - cada expansão é mostrada")
+        else:
+            log("\n  A* EXATO (peso=1) - cada expansão é mostrada")
+
+        def cb2(d):
+            viva(f"A* | exp {d['expandidos']:>4} | abertos {d['abertos']:>5} | f={d['f']:7.1f} g={d['g']:6.0f} | "
+                 f"{d['prof']:>2}/24 | rota parcial: {nome(d['rota'][-14:])}")
+            time.sleep(0.012 / max(velocidade, 1e-6))
+        r = astar_ginasios(pc, peso=peso, limite_estados=3_000_000, tempo_max=120, cb=cb2)
+        if r is not None:
+            fixa(f"  A* chegou ao destino: rota completa {nome(r['ordem'])}")
+    else:
+        r = astar_ginasios(pc, peso=peso, limite_estados=3_000_000, tempo_max=120, log=log)
     if r is None:
         raise SystemExit("A* estourou o limite de estados; aumente --peso.")
     log(f"  A*: custo {r['custo']} | expandidos {r['expandidos']:,} | gerados {r['gerados']:,} "
@@ -59,7 +123,14 @@ def planejar_rota(pc, peso, certificar):
     if certificar:
         log("  Certificando otimalidade com Held-Karp exato (numpy, ~1 min, ~0,8 GB RAM)...")
         t0 = time.time()
-        copt, oopt = held_karp(pc)
+        if vivo:
+            def cbh(k, ng, n):
+                viva(f"Held-Karp exato | camada {k:>2}/{ng} [{'#' * k}{'.' * (ng - k)}] "
+                     f"{n:>9,} conjuntos de ginásios nesta camada")
+            copt, oopt = held_karp(pc, cb=cbh)
+            fixa(f"  Held-Karp concluído.")
+        else:
+            copt, oopt = held_karp(pc)
         otimo = copt
         log(f"  Held-Karp: custo ótimo global = {copt} ({time.time() - t0:.0f}s)")
         if copt < custo:
@@ -75,6 +146,7 @@ def percorrer(mapa, pc, ordem, mascaras):
     """Simula o agente célula a célula. Devolve caminho, custos acumulados, eventos."""
     energia = [config.ENERGIA_INICIAL] * B.NP
     caminho, acum, eventos = [], [], []
+    acum_rota, acum_bat, energia_k, fim_perna = [], [], [], []
     total = 0.0
     c_rota = c_bat = 0.0
     registros = []
@@ -85,6 +157,7 @@ def percorrer(mapa, pc, ordem, mascaras):
             c_rota += mapa.custo[p[0]][p[1]] if caminho else config.CUSTO_ORIGEM_DESTINO
             total = c_rota + c_bat
             caminho.append(p); acum.append(total); eventos.append("")
+            acum_rota.append(c_rota); acum_bat.append(c_bat); energia_k.append(list(energia))
         if 1 <= b <= len(pc.ids):
             g = b - 1
             m = mascaras[g]
@@ -93,10 +166,13 @@ def percorrer(mapa, pc, ordem, mascaras):
                 energia[p] -= config.PERDA_POR_BATALHA
             c_bat += tempo
             acum[-1] = c_rota + c_bat
+            acum_bat[-1] = c_bat; energia_k[-1] = list(energia)
             eventos[-1] = f"Gym {pc.nomes[b]}: {'+'.join(B.NOMES[p] for p in B.BITS[m])} ({tempo:.1f} min)"
             registros.append((len(registros) + 1, pc.nomes[b], g + 1, B.DIFS[g],
                               [B.NOMES[p] for p in B.BITS[m]], tempo, c_rota, c_bat, list(energia)))
-    return dict(caminho=caminho, acum=acum, eventos=eventos, c_rota=c_rota, c_bat=c_bat,
+        fim_perna.append(len(caminho) - 1)
+    return dict(acum_rota=acum_rota, acum_bat=acum_bat, energia_k=energia_k, fim_perna=fim_perna,
+                caminho=caminho, acum=acum, eventos=eventos, c_rota=c_rota, c_bat=c_bat,
                 energia=energia, registros=registros)
 
 
@@ -112,6 +188,11 @@ def main():
     ap.add_argument("--sem-certificado", action="store_true", help="não roda o Held-Karp exato")
     ap.add_argument("--visual", action="store_true", help="gera resultado.png e resultado.gif")
     ap.add_argument("--ascii", action="store_true", help="imprime o mapa com o caminho no console")
+    ap.add_argument("--terminal", action="store_true",
+                    help="anima no terminal: busca local ao vivo, A* (fronteira/visitados), agente e custos")
+    ap.add_argument("--velocidade", type=float, default=1.0, help="velocidade da animação (padrão 1.0)")
+    ap.add_argument("--quadros", nargs="?", const="passo_a_passo.txt", default=None, metavar="ARQUIVO",
+                    help="grava um quadro em texto por perna do trajeto (padrão: passo_a_passo.txt)")
     args = ap.parse_args()
 
     mapa = Mapa(args.mapa)
@@ -120,7 +201,8 @@ def main():
 
     # ---- Tarefa 1: busca local
     log(f"\n[Tarefa 1] Busca local ({args.execucoes} execuções por algoritmo)")
-    exp = experimento_busca_local(args.execucoes, ["hc", "sa", "ga"])
+    exp = experimento_busca_local(args.execucoes, ["hc", "sa", "ga"],
+                                  vivo=args.terminal, velocidade=args.velocidade)
     sol_opt, c_opt = B.otimo_exato()
     log(f"  {'alg':<4}{'melhor':>10}{'execuções':>11}{'média':>10}{'desvio':>9}{'tempo(s)':>10}")
     for nome, e in exp.items():
@@ -132,13 +214,28 @@ def main():
         f"({'= ótimo global' if abs(c_bat_busca - c_opt) < 1e-6 else f'+{c_bat_busca - c_opt:.3f} sobre o ótimo'})")
 
     # ---- Tarefa 2: rota
-    rota = planejar_rota(pc, args.peso, not args.sem_certificado)
+    rota = planejar_rota(pc, args.peso, not args.sem_certificado,
+                         vivo=args.terminal, velocidade=args.velocidade)
     ordem = rota["ordem"]
 
     # ---- execução
     sim = percorrer(mapa, pc, ordem, mascaras)
     total = sim["c_rota"] + sim["c_bat"]
     assert abs(sim["c_rota"] - rota["custo"]) < 1e-6, (sim["c_rota"], rota["custo"])
+
+    if args.terminal:
+        import visual
+        try:
+            input("\nA animação vai começar. Deixe o terminal em tela cheia (ideal >= 155 colunas x 52 linhas)"
+                  " e pressione ENTER... ")
+        except EOFError:
+            pass
+        visual.animar_terminal(mapa, pc, ordem, sim, astar_grade, B.NOMES, args.velocidade)
+
+    if args.quadros:
+        import visual
+        visual.quadros_texto(mapa, pc, ordem, sim, astar_grade, B.NOMES, args.quadros)
+        log(f"\nQuadros passo a passo gravados em {args.quadros}")
 
     log("\n================ RESULTADO FINAL ================")
     log("Ordem de visita e Pokémon usados em cada batalha:")

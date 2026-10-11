@@ -160,11 +160,13 @@ def solucao_aleatoria(rng):
 
 
 # -------------------------------------------------------------- Hill Climbing
-def hill_climbing(rng, reinicios=20, sol_inicial=None):
-    """Subida de encosta de ascensão máxima com reinícios aleatórios."""
+def hill_climbing(rng, reinicios=20, sol_inicial=None, cb=None):
+    """Subida de encosta de ascensão máxima com reinícios aleatórios.
+    cb (opcional) recebe um texto de progresso; não altera o resultado."""
     melhor = None
     for r in range(reinicios):
         est = Estado(sol_inicial if (sol_inicial and r == 0) else solucao_aleatoria(rng))
+        passo = 0
         while True:
             melhor_mov, melhor_av = None, None
             for mv in todos_movimentos(est):
@@ -174,18 +176,26 @@ def hill_climbing(rng, reinicios=20, sol_inicial=None):
             if melhor_mov is None:
                 break
             est.aplicar(melhor_mov, melhor_av)
+            passo += 1
+            if cb:
+                mb = min(est.total, melhor.total) if melhor else est.total
+                cb(f"HC | reinício {r + 1:>2}/{reinicios} | passo {passo:>3} | "
+                   f"custo atual {est.total:9.3f} | melhor {mb:9.3f}")
         if melhor is None or est.total < melhor.total:
             melhor = est
     return melhor.sol, melhor.total
 
 
 # --------------------------------------------------------- Simulated Annealing
-def simulated_annealing(rng, iteracoes=400000, t0=20.0, tf=0.005, sol_inicial=None):
+def simulated_annealing(rng, iteracoes=400000, t0=20.0, tf=0.005, sol_inicial=None, cb=None):
     est = Estado(sol_inicial or solucao_aleatoria(rng))
     melhor, melhor_c = list(est.sol), est.total
     alfa = (tf / t0) ** (1.0 / iteracoes)
     T = t0
-    for _ in range(iteracoes):
+    for it in range(iteracoes):
+        if cb and it % 4000 == 0:
+            cb(f"SA | iteração {it:>6}/{iteracoes} | T {T:8.4f} | "
+               f"custo atual {est.total:9.3f} | melhor {melhor_c:9.3f}")
         mv = mov_aleatorio(est, rng)
         if mv is not None:
             av = est.avaliar(mv)
@@ -199,7 +209,7 @@ def simulated_annealing(rng, iteracoes=400000, t0=20.0, tf=0.005, sol_inicial=No
 
 
 # ------------------------------------------------------- Algoritmo Genético
-def algoritmo_genetico(rng, populacao=80, geracoes=400, p_cruz=0.9, p_mut=0.03, elite=2):
+def algoritmo_genetico(rng, populacao=80, geracoes=400, p_cruz=0.9, p_mut=0.03, elite=2, cb=None):
     pop = [solucao_aleatoria(rng) for _ in range(populacao)]
     fit = [custo(s) for s in pop]
 
@@ -207,7 +217,10 @@ def algoritmo_genetico(rng, populacao=80, geracoes=400, p_cruz=0.9, p_mut=0.03, 
         c = rng.sample(range(populacao), k)
         return pop[min(c, key=lambda i: fit[i])]
 
-    for _ in range(geracoes):
+    for g in range(geracoes):
+        if cb and g % 4 == 0:
+            cb(f"GA | geração {g:>3}/{geracoes} | melhor {min(fit):9.3f} | "
+               f"média da população {sum(fit) / len(fit):9.3f}")
         ordem = sorted(range(populacao), key=lambda i: fit[i])
         nova = [list(pop[i]) for i in ordem[:elite]]
         while len(nova) < populacao:
