@@ -3,10 +3,10 @@
 ## Como rodar
 ```
 pip install numpy matplotlib pillow
-python main.py                    # tudo + certificado de otimalidade da rota (~1-2 min, ~0,8 GB RAM)
-python main.py --execucoes 30     # experimento HC/SA/GA com 30 execuções cada
+python main.py                    # tudo + certificado de otimalidade da rota
+python main.py --execucoes 30     # experimento com 30 execuções cada
 python main.py --sem-certificado  # só o A* ponderado (segundos)
-python main.py --visual           # gera resultado.png e resultado.gif
+python main.py --visual           # gera foto e vídeo do resultado
 python main.py --ascii            # mapa no console
 ```
 Arquivos: `config.py` (custos de terreno, dificuldades, poderes, energia), `mapa.txt` (mapa 42x150,
@@ -39,26 +39,20 @@ Logo C_total ótimo = rota ótima + batalhas ótimas.
 ## Visualização do processo no terminal
 
 ```
-python main.py --terminal                  # tudo ao vivo, de ponta a ponta
+python main.py --terminal                  # completo
 python main.py --terminal --execucoes 3    # mais curto (menos execuções da busca local)
 python main.py --terminal --velocidade 3   # animação mais rápida (0.5 = mais lenta)
-python main.py --quadros                   # grava passo_a_passo.txt (texto puro, p/ relatório)
 ```
 
-`--terminal` mostra TODAS as tentativas até o resultado final, em ordem:
+`--terminal` mostra todas as tentativas até o resultado final, em ordem:
 
-1. **Tarefa 1 (busca local)**: cada execução de Hill Climbing (com seus 20 reinícios), Simulated
-   Annealing (iterações, temperatura) e Algoritmo Genético (gerações, melhor e média da população) é
-   mostrada ao vivo, com o custo caindo; ao fim de cada execução fica uma linha com o custo final.
-2. **Tarefa 2, tentativa 1**: A* EXATO (peso 1) por 8 s, mostrando estados expandidos, fronteira e
-   profundidade; ele não termina (por isso o A* ponderado).
-3. **Tarefa 2, tentativa 2**: A* PONDERADO (peso 2), com cada expansão e a rota parcial.
-4. **Held-Karp** (certificado de otimalidade): barra de progresso por camada; mostra a melhoria
-   1253 -> 1210 e adota a rota ótima.
+1. **Tarefa 1 (busca local)**: cada execução de Hill Climbing, Simulated
+   Annealing e Algoritmo Genético é mostrada ao vivo, com o custo caindo; ao fim de cada execução fica uma linha com o custo final.
+2. **Tarefa 2, tentativa 1**: A* exato por 8 s, mostrando estados expandidos, fronteira e
+   profundidade, porém não termina.
+3. **Tarefa 2, tentativa 2**: A* ponderado (peso 2), com cada expansão e a rota parcial.
+4. **Held-Karp** (certificado de otimalidade): barra de progresso por camada; mostra as melhorias
+   e adota a melhor rota.
 5. **Animação do mapa**: para cada perna, o A* na grade expandindo (`+` expandido, `?` fronteira), o
    agente `@` andando (`*`), batalhas, energia e custos acumulados.
 6. **Resultado final** completo.
-
-Dicas: terminal em tela cheia (ideal >= 155 colunas x 52 linhas; se for menor, o mapa é recortado e
-acompanha o agente). No Windows use o Windows Terminal ou PowerShell 7. Para o relatório, grave a
-tela (Win+G) ou use `--quadros` (um quadro por perna, UTF-8).
