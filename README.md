@@ -14,7 +14,7 @@ editável), `mapa.py`, `rota.py` (A*), `batalhas.py` (busca local), `visual.py`,
 
 ## Tarefa 1 – Batalhas (busca local)
 * **Representação:** 24 máscaras de bits (1..31); bit p = Pokémon p luta naquele ginásio.
-* **Custo:** Σ dificuldade_i / Σ poder + 100 · (violações de energia). Restrições: cada Pokémon luta ≤ 6 vezes
+* **Custo:** somatório da dificuldade / somatório do poder + 100 · (violações de energia). Restrições: cada Pokémon luta ≤ 6 vezes
   e pelo menos um luta ≤ 5 vezes (chega com energia ≥ 1). A penalidade (100) é maior que o maior ganho
   possível de um uso extra (~58 min), então o ótimo penalizado é viável.
 * **Vizinhança:** alternar Pokémon, substituir Pokémon, transferir Pokémon entre ginásios, trocar equipes entre ginásios.
@@ -24,17 +24,17 @@ editável), `mapa.py`, `rota.py` (A*), `batalhas.py` (busca local), `visual.py`,
 ## Tarefa 2 – Rota (A*)
 * **Estado:** (ponto atual, conjunto de ginásios visitados) – o conjunto é uma máscara de 24 bits.
 * **Ações:** ir pelo caminho mínimo da grade até um ginásio não visitado; com todos visitados, ir a U.
-* **Custo:** 1 (origem) + soma do custo de terreno de cada célula entrada (M=200, A=30, F=15, R=5, .=1).
+* **Custo:** 1 (origem) + soma do custo de terreno (M=200, A=30, F=15, R=5, .=1).
   Pernas calculadas na grade 4-conexa; o A* célula a célula (h = Manhattan × menor custo) é usado na visualização.
 * **Heurística:** h = menor aresta do ponto atual a um ginásio livre + MST dos ginásios livres + menor aresta de um
   ginásio livre ao destino. Admissível e consistente.
 * **Otimalidade:** com peso 1 o A* é ótimo, mas em Python não termina para 24 ginásios (>600 mil expansões, sem fim).
   Por isso: A* ponderado (peso 2) dá solução rápida (custo 1253, 266 expansões) e a **otimalidade é certificada
-  por Held-Karp exato** (custo 1210).
+  por Held-Karp exato**
 
 ## Independência dos problemas
 O tempo de um ginásio depende só da dificuldade e dos Pokémon escolhidos, não da ordem de visita.
-Logo C_total ótimo = rota ótima + batalhas ótimas.
+Logo custo total ótimo = rota ótima + batalhas ótimas.
 
 ## Visualização do processo no terminal
 
@@ -47,11 +47,11 @@ python main.py --terminal --velocidade 3   # animação mais rápida (0.5 = mais
 `--terminal` mostra todas as tentativas até o resultado final, em ordem:
 
 1. **Tarefa 1 (busca local)**: cada execução de Hill Climbing, Simulated
-   Annealing e Algoritmo Genético é mostrada ao vivo, com o custo caindo; ao fim de cada execução fica uma linha com o custo final.
+   Annealing e Algoritmo Genético é mostrada ao vivo, com o custo caindo. Ao fim de cada execução fica uma linha com o custo final.
 2. **Tarefa 2, tentativa 1**: A* exato por 8 s, mostrando estados expandidos, fronteira e
    profundidade, porém não termina.
 3. **Tarefa 2, tentativa 2**: A* ponderado (peso 2), com cada expansão e a rota parcial.
-4. **Held-Karp** (certificado de otimalidade): barra de progresso por camada; mostra as melhorias
+4. **Held-Karp** (certificado de otimalidade): barra de progresso por camada. Mostra as melhorias
    e adota a melhor rota.
 5. **Animação do mapa**: para cada perna, o A* na grade expandindo (`+` expandido, `?` fronteira), o
    agente `@` andando (`*`), batalhas, energia e custos acumulados.
