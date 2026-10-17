@@ -1,5 +1,5 @@
-# INF1771 – Trabalho 1: Busca Heurística (Pokémon / Kanto)
-
+# INF1771 – Trabalho 1
+# Grupo: Matheus Marques (2410520), Lucas André (2411658), Lucas Gromann (2410845)
 ## Como rodar
 ```
 pip install numpy matplotlib pillow
