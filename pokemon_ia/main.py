@@ -1,28 +1,18 @@
-#!/usr/bin/env python3
 """
-INF1771 - Trabalho 1: Busca Heurística (Pokémon / Kanto)
-
+INF1771 - Trabalho 1: Busca Heurística 
   Tarefa 1  seleção dos Pokémon em cada ginásio  -> busca local (HC, SA ou GA)
   Tarefa 2  rota de menor custo 1 -> 24 ginásios -> U   -> A*
 
-Exemplos:
-  python main.py                       # tudo, com certificado de otimalidade (~1 min)
-  python main.py --execucoes 30        # experimento com 30 execuções de HC/SA/GA
-  python main.py --sem-certificado     # só o A* ponderado (rápido, não garante ótimo)
-  python main.py --visual              # gera resultado.png e resultado.gif
-  python main.py --ascii               # mapa no console
-  python main.py --terminal            # ANIMAÇÃO no terminal: busca local ao vivo + A* + agente andando
-  python main.py --terminal --velocidade 3   # mais rápido (0.5 = mais lento)
-  python main.py --quadros             # grava passo_a_passo.txt (um quadro por perna, para o relatório)
 """
 import argparse
 import random
 import statistics as st
 import sys
 import time
-
+import shutil
 import batalhas as B
 import config
+import visual
 from mapa import Mapa
 from rota import PontosChave, astar_ginasios, astar_grade, held_karp
 
@@ -32,23 +22,23 @@ def log(msg):
 
 
 def viva(msg):
-    """Escreve uma linha que se atualiza no lugar (progresso ao vivo), sem quebrar a linha."""
-    import shutil
+    #Escreve uma linha que se atualiza no lugar (progresso ao vivo), sem quebrar a linha.
+    
     largura = shutil.get_terminal_size((160, 40)).columns - 4
     sys.stdout.write("\r\033[K  " + msg[:max(20, largura)])
     sys.stdout.flush()
 
 
 def fixa(msg):
-    """Substitui a linha viva por uma linha definitiva."""
+    #Substitui a linha viva por uma linha definitiva.
     sys.stdout.write("\r\033[K" + msg + "\n")
     sys.stdout.flush()
 
 
-# ----------------------------------------------------------------- Tarefa 1
+#TAREFA 1
 def experimento_busca_local(execucoes, algoritmos, vivo=False, velocidade=1.0):
-    """Executa cada algoritmo `execucoes` vezes. Devolve {alg: dict(estatísticas, melhor)}.
-    Com vivo=True mostra TODAS as tentativas (reinícios, iterações, gerações) em tempo real."""
+    #Executa cada algoritmo `execucoes` vezes. Devolve {alg: dict(estatísticas, melhor)}.
+    #Com vivo=True mostra TODAS as tentativas (reinícios, iterações, gerações) em tempo real.
     out = {}
     nomes_alg = {"hc": "Hill Climbing (20 reinícios por execução)",
                  "sa": "Simulated Annealing (400 mil iterações por execução)",
@@ -80,11 +70,11 @@ def experimento_busca_local(execucoes, algoritmos, vivo=False, velocidade=1.0):
     return out
 
 
-# ----------------------------------------------------------------- Tarefa 2
+# TAREFA 2
 def planejar_rota(pc, peso, certificar, vivo=False, velocidade=1.0):
     log(f"\n[Tarefa 2] A* sobre (ginásio atual, conjunto visitado), peso={peso}")
     if vivo:
-        import visual
+        
         visual.ativar_ansi()
         nome = lambda r: " > ".join(pc.nomes[i] for i in r)
         if peso != 1.0:
@@ -143,7 +133,7 @@ def planejar_rota(pc, peso, certificar, vivo=False, velocidade=1.0):
 
 
 def percorrer(mapa, pc, ordem, mascaras):
-    """Simula o agente célula a célula. Devolve caminho, custos acumulados, eventos."""
+    #Simula o agente célula a célula. Devolve caminho, custos acumulados, eventos.
     energia = [config.ENERGIA_INICIAL] * B.NP
     caminho, acum, eventos = [], [], []
     acum_rota, acum_bat, energia_k, fim_perna = [], [], [], []
@@ -176,7 +166,7 @@ def percorrer(mapa, pc, ordem, mascaras):
                 energia=energia, registros=registros)
 
 
-# --------------------------------------------------------------------- main
+# MAIN
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--mapa", default="mapa.txt")
@@ -199,7 +189,7 @@ def main():
     log(f"Mapa {mapa.altura}x{mapa.largura} | origem {mapa.pos[config.ORIGEM]} | destino {mapa.pos[config.DESTINO]}")
     pc = PontosChave(mapa)
 
-    # ---- Tarefa 1: busca local
+    #BUSCA LOCAL
     log(f"\n[Tarefa 1] Busca local ({args.execucoes} execuções por algoritmo)")
     exp = experimento_busca_local(args.execucoes, ["hc", "sa", "ga"],
                                   vivo=args.terminal, velocidade=args.velocidade)
@@ -213,18 +203,18 @@ def main():
     log(f"  plano usado: melhor execução de '{args.algoritmo}' = {c_bat_busca:.3f} min "
         f"({'= ótimo global' if abs(c_bat_busca - c_opt) < 1e-6 else f'+{c_bat_busca - c_opt:.3f} sobre o ótimo'})")
 
-    # ---- Tarefa 2: rota
+    # TAREFA 2 - ROTA
     rota = planejar_rota(pc, args.peso, not args.sem_certificado,
                          vivo=args.terminal, velocidade=args.velocidade)
     ordem = rota["ordem"]
 
-    # ---- execução
+    # EXECUCAO
     sim = percorrer(mapa, pc, ordem, mascaras)
     total = sim["c_rota"] + sim["c_bat"]
     assert abs(sim["c_rota"] - rota["custo"]) < 1e-6, (sim["c_rota"], rota["custo"])
 
     if args.terminal:
-        import visual
+        
         try:
             input("\nA animação vai começar. Deixe o terminal em tela cheia (ideal >= 155 colunas x 52 linhas)"
                   " e pressione ENTER... ")
@@ -233,7 +223,7 @@ def main():
         visual.animar_terminal(mapa, pc, ordem, sim, astar_grade, B.NOMES, args.velocidade)
 
     if args.quadros:
-        import visual
+
         visual.quadros_texto(mapa, pc, ordem, sim, astar_grade, B.NOMES, args.quadros)
         log(f"\nQuadros passo a passo gravados em {args.quadros}")
 
@@ -265,7 +255,7 @@ def main():
 
     if args.visual:
         log("\nGerando visualização (A* célula a célula em cada perna)...")
-        import visual
+       
         exp_cel, fro_cel = set(), set()
         for a, b in zip(ordem, ordem[1:]):
             _, c, ex, fr = astar_grade(mapa, pc.coords[a], pc.coords[b])
@@ -282,7 +272,7 @@ def main():
 
 
 def mapa_ascii_wrapper(mapa, caminho):
-    import visual
+
     return visual.mapa_ascii(mapa, caminho=caminho)
 
 

@@ -1,9 +1,5 @@
-"""
-Configurações editáveis do Trabalho 1 (INF1771 - Busca Heurística).
-Tudo que o enunciado pede como "configurável" está aqui.
-"""
 
-# ---------------------------------------------------------------- terreno
+# terreno
 # custo (em minutos) de ENTRAR em uma célula de cada tipo
 CUSTO_TERRENO = {
     "M": 200,   # montanha
@@ -23,7 +19,7 @@ CUSTO_ORIGEM_DESTINO = 1   # enunciado: origem e destino custam +1 minuto
 # (empate -> o mais barato). Também pode ser uma letra fixa: 'A', 'F', 'R', 'M' ou '.'
 TERRENO_SOB_GINASIO = "auto"
 
-# ---------------------------------------------------------------- ginásios
+# ginásios
 # (marcador no mapa -> dificuldade). A ordem desta lista é a ordem 1º..24º Gym.
 DIFICULDADE = {
     "2": 35,  "3": 40,  "4": 45,  "5": 50,  "6": 55,  "7": 60,  "8": 65,  "9": 70,
@@ -31,7 +27,7 @@ DIFICULDADE = {
     "K": 130, "L": 140, "N": 150, "O": 155, "P": 160, "Q": 165, "S": 170, "T": 180,
 }
 
-# ---------------------------------------------------------------- pokémon
+# pokémon
 PODER = {            # fator de poder
     "Pikachu": 1.5,
     "Bulbassauro": 1.4,
@@ -43,5 +39,5 @@ ENERGIA_INICIAL = 6          # cada Pokémon começa com 6 pontos
 PERDA_POR_BATALHA = 1        # e perde 1 por batalha em que participa
 ENERGIA_MIN_FINAL = 1        # pelo menos um Pokémon deve chegar com energia >= 1
 
-# ---------------------------------------------------------------- busca local
+# busca local
 SEMENTE = 42

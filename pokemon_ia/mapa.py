@@ -1,4 +1,4 @@
-"""Leitura do mapa (arquivo texto) e custos de terreno."""
+#Leitura do mapa (arquivo texto) e custos de terreno.
 import config
 
 

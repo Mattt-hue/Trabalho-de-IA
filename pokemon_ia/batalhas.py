@@ -20,6 +20,7 @@ import math
 import random
 
 import config
+import numpy as np
 
 NOMES = list(config.PODER)
 PODERES = [config.PODER[n] for n in NOMES]
@@ -35,7 +36,7 @@ PODER_MASK = [sum(PODERES[p] for p in range(NP) if m >> p & 1) for m in range(1 
 BITS = [[p for p in range(NP) if m >> p & 1] for m in range(1 << NP)]
 
 
-# ------------------------------------------------------------- avaliação
+# AVALIACAO
 def usos(sol):
     u = [0] * NP
     for m in sol:
@@ -66,9 +67,9 @@ def energia_final(sol):
     return [ENERGIA - config.PERDA_POR_BATALHA * x for x in usos(sol)]
 
 
-# ---------------------------------------------------- movimentos de vizinhança
+# movimentos de vizinhança
 class Estado:
-    """Solução + contadores incrementais para avaliar vizinhos em O(1)."""
+    #Solução + contadores incrementais para avaliar vizinhos em O(1).
 
     def __init__(self, sol):
         self.sol = list(sol)
@@ -81,7 +82,7 @@ class Estado:
         return self.cb + self.pen
 
     def avaliar(self, mudancas):
-        """mudancas = [(i, nova_mascara), ...] -> (novo_total, novos_usos, novo_cb)"""
+        #mudancas = [(i, nova_mascara), ...] -> (novo_total, novos_usos, novo_cb)
         u = list(self.u)
         cb = self.cb
         for i, nm in mudancas:
@@ -101,7 +102,7 @@ class Estado:
 
 
 def mov_aleatorio(est, rng):
-    """Um movimento aleatório válido (lista de mudanças) ou None."""
+    #Um movimento aleatório válido (lista de mudanças) ou None.
     x = rng.random()
     if x < 0.45:
         i, p = rng.randrange(NG), rng.randrange(NP)
@@ -159,10 +160,10 @@ def solucao_aleatoria(rng):
     return [rng.randint(1, (1 << NP) - 1) for _ in range(NG)]
 
 
-# -------------------------------------------------------------- Hill Climbing
+# HILL CLIMBING
 def hill_climbing(rng, reinicios=20, sol_inicial=None, cb=None):
-    """Subida de encosta de ascensão máxima com reinícios aleatórios.
-    cb (opcional) recebe um texto de progresso; não altera o resultado."""
+    #Subida de encosta de ascensão máxima com reinícios aleatórios.
+    #cb (opcional) recebe um texto de progresso; não altera o resultado.
     melhor = None
     for r in range(reinicios):
         est = Estado(sol_inicial if (sol_inicial and r == 0) else solucao_aleatoria(rng))
@@ -186,7 +187,7 @@ def hill_climbing(rng, reinicios=20, sol_inicial=None, cb=None):
     return melhor.sol, melhor.total
 
 
-# --------------------------------------------------------- Simulated Annealing
+# SIMULATED ANNEALING
 def simulated_annealing(rng, iteracoes=400000, t0=20.0, tf=0.005, sol_inicial=None, cb=None):
     est = Estado(sol_inicial or solucao_aleatoria(rng))
     melhor, melhor_c = list(est.sol), est.total
@@ -208,7 +209,7 @@ def simulated_annealing(rng, iteracoes=400000, t0=20.0, tf=0.005, sol_inicial=No
     return melhor, melhor_c
 
 
-# ------------------------------------------------------- Algoritmo Genético
+# ALGORITMO GENETICO
 def algoritmo_genetico(rng, populacao=80, geracoes=400, p_cruz=0.9, p_mut=0.03, elite=2, cb=None):
     pop = [solucao_aleatoria(rng) for _ in range(populacao)]
     fit = [custo(s) for s in pop]
@@ -244,11 +245,11 @@ def algoritmo_genetico(rng, populacao=80, geracoes=400, p_cruz=0.9, p_mut=0.03, 
 ALGORITMOS = {"hc": hill_climbing, "sa": simulated_annealing, "ga": algoritmo_genetico}
 
 
-# ---------------------------------------------- referência: ótimo exato (DP)
+# REFERENCIA: OTIMO EXATO (DP)
 def otimo_exato():
-    """Programação dinâmica sobre (ginásio, vetor de usos dos 5 Pokémon). 7^5 estados.
-    Dá o ótimo GLOBAL do problema de batalhas (usado para avaliar a busca local)."""
-    import numpy as np
+    #Programação dinâmica sobre (ginásio, vetor de usos dos 5 Pokémon). 7^5 estados.
+    #Dá o ótimo GLOBAL do problema de batalhas (usado para avaliar a busca local).
+    
     base = MAX_USOS_TODOS + 1
     NS = base ** NP
     idx = np.arange(NS)

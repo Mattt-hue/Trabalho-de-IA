@@ -1,12 +1,21 @@
-"""Visualização: imagem final, GIF do agente andando e mapa ASCII no console."""
+#Visualização: imagem final, GIF do agente andando e mapa ASCII no console.
 import config
-
+import numpy as np
+import matplotlib
+from matplotlib.colors import to_rgb
+import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
+from matplotlib.animation import FuncAnimation, PillowWriter
+import os
+import shutil
+import sys
+import time
 CORES = {"M": "#8B5A2B", "A": "#4F8FE8", "F": "#4CAF50", "R": "#8D8D8D", ".": "#EDEDED"}
 
 
 def mapa_ascii(mapa, caminho=None, expandidos=None, fronteira=None, agente=None):
-    """Console: '@' agente, '*' caminho final, '+' expandido, '?' fronteira,
-    marcadores de ginásio/origem/destino e letras do terreno nas demais células."""
+    # Console: '@' agente, '*' caminho final, '+' expandido, '?' fronteira,
+    # marcadores de ginásio/origem/destino e letras do terreno nas demais células.
     caminho = set(caminho or [])
     expandidos = set(expandidos or [])
     fronteira = set(fronteira or [])
@@ -33,8 +42,8 @@ def mapa_ascii(mapa, caminho=None, expandidos=None, fronteira=None, agente=None)
 
 
 def _base(mapa, ax, expandidos, fronteira, ordem_nomes, pos):
-    import numpy as np
-    from matplotlib.colors import to_rgb
+    
+    
     img = np.zeros((mapa.altura, mapa.largura, 3))
     for r in range(mapa.altura):
         for c in range(mapa.largura):
@@ -57,16 +66,16 @@ def _base(mapa, ax, expandidos, fronteira, ordem_nomes, pos):
 
 
 def salvar_imagem(mapa, caminho_celulas, expandidos, fronteira, ordem_visita, resumo, arquivo):
-    import matplotlib
+    
     matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+    
     ordem_nomes = {m: i + 1 for i, m in enumerate(ordem_visita)}   # número da visita em cada ginásio
     fig, ax = plt.subplots(figsize=(16, 6.4))
     _base(mapa, ax, expandidos, fronteira, ordem_nomes, mapa.pos)
     ys = [p[0] for p in caminho_celulas]; xs = [p[1] for p in caminho_celulas]
     ax.plot(xs, ys, color="#D50000", lw=1.6, alpha=0.9)
     ax.set_title(resumo + "\n(0 = origem, U = destino, números = ordem de visita dos ginásios)", fontsize=10)
-    from matplotlib.patches import Patch
+    
     leg = [Patch(color=CORES[k], label=n) for k, n in
            (("M", "Montanha (200)"), ("A", "Água (30)"), ("F", "Floresta (15)"),
             ("R", "Rochoso (5)"), (".", "Livre (1)"))]
@@ -81,12 +90,10 @@ def salvar_imagem(mapa, caminho_celulas, expandidos, fronteira, ordem_visita, re
 
 def salvar_gif(mapa, caminho_celulas, passos_custo, eventos, expandidos, fronteira,
                ordem_visita, arquivo, max_frames=160):
-    """passos_custo[k] = custo acumulado (rota + batalhas) ao chegar na célula k;
-    eventos[k] = texto do ginásio vencido naquela célula (ou '')."""
-    import matplotlib
+    # passos_custo[k] = custo acumulado (rota + batalhas) ao chegar na célula k;
+    # eventos[k] = texto do ginásio vencido naquela célula (ou '').
     matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    from matplotlib.animation import FuncAnimation, PillowWriter
+    
     ordem_nomes = {m: i + 1 for i, m in enumerate(ordem_visita)}
     fig, ax = plt.subplots(figsize=(13, 5.4))
     _base(mapa, ax, expandidos, fronteira, ordem_nomes, mapa.pos)
@@ -110,13 +117,10 @@ def salvar_gif(mapa, caminho_celulas, passos_custo, eventos, expandidos, frontei
     plt.close(fig)
 
 
-# =====================================================================
-#  Visualização no terminal (animada, com cores ANSI) e quadros em texto
-# =====================================================================
-import os
-import shutil
-import sys
-import time
+
+# Visualização no terminal (animada, com cores ANSI) e quadros em texto
+
+
 
 # cores de fundo (paleta de 256 cores) por terreno
 _BG = {"M": 94, "A": 25, "F": 28, "R": 240, ".": 236}
@@ -124,13 +128,13 @@ _NOMES_TERRENO = {"M": "Montanha", "A": "Água", "F": "Floresta", "R": "Rochoso"
 
 
 def ativar_ansi():
-    """Habilita sequências ANSI no console do Windows 10+ (no Linux/Mac não faz nada)."""
+    #Habilita sequências ANSI no console do Windows 10+ (no Linux/Mac não faz nada).
     if os.name == "nt":
         os.system("")
 
 
 def _fronteira(mapa, expandidos):
-    """Células vizinhas das expandidas que ainda não foram expandidas (= fronteira do A*)."""
+    #Células vizinhas das expandidas que ainda não foram expandidas (fronteira do A*).
     fr = set()
     for (r, c) in expandidos:
         for q in mapa.vizinhos(r, c):

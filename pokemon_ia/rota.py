@@ -1,18 +1,19 @@
-"""
-Tarefa 2 - Rota: A* sobre a grade (pernas entre pontos de interesse) e
-A* sobre o espaço (ginásio atual, conjunto de ginásios visitados).
-"""
+
+#Tarefa 2 - Rota: A* sobre a grade (pernas entre pontos de interesse) e
+#A* sobre o espaço (ginásio atual, conjunto de ginásios visitados).
+
 import heapq
 import time
+import numpy as np
 from itertools import count
 
 import config
 
 
-# ------------------------------------------------------------------ grade
+# GRADE
 def dijkstra_grade(mapa, origem):
-    """Custos mínimos da célula `origem` para todas as outras (A* com h=0).
-    Custo de uma perna = soma do custo de ENTRAR em cada célula (sem a origem)."""
+    #Custos mínimos da célula `origem` para todas as outras (A* com h=0).
+    #Custo de uma perna = soma do custo de ENTRAR em cada célula (sem a origem).
     H, W = mapa.altura, mapa.largura
     INF = float("inf")
     dist = [[INF] * W for _ in range(H)]
@@ -34,8 +35,8 @@ def dijkstra_grade(mapa, origem):
 
 
 def astar_grade(mapa, origem, destino):
-    """A* célula a célula, h = distância de Manhattan * menor custo de terreno
-    (admissível e consistente). Devolve caminho, custo, células expandidas e fronteira."""
+   #A* célula a célula, h = distância de Manhattan * menor custo de terreno
+    #(admissível e consistente). Devolve caminho, custo, células expandidas e fronteira.
     hmin = mapa.custo_min
 
     def h(p):
@@ -71,9 +72,9 @@ def astar_grade(mapa, origem, destino):
     return caminho, g[destino], expandidos, set(fronteira)
 
 
-# --------------------------------------------------------- pontos-chave
+# PONTOS-CHAVE
 class PontosChave:
-    """Origem + 24 ginásios + destino e a matriz de custos mínimos entre eles."""
+    # Origem + 24 ginásios + destino e a matriz de custos mínimos entre eles.
 
     def __init__(self, mapa):
         self.mapa = mapa
@@ -92,7 +93,7 @@ class PontosChave:
         self.W = [[min(self.D[i][j], self.D[j][i]) for j in range(n)] for i in range(n)]
 
     def caminho(self, i, j):
-        """Caminho célula a célula (inclui as duas pontas) de i até j."""
+        #Caminho célula a célula (inclui as duas pontas) de i até j.
         pai = self._pais[i]
         p = self.coords[j]
         out = []
@@ -103,9 +104,9 @@ class PontosChave:
         return out
 
 
-# ---------------------------------------------------- A* nos ginásios
+# A* NOS GINASIOS
 def _mst(W, nos):
-    """Custo da árvore geradora mínima (Prim) dos índices `nos` com pesos W."""
+    #Custo da árvore geradora mínima (Prim) dos índices `nos` com pesos W.
     k = len(nos)
     if k <= 1:
         return 0
@@ -224,16 +225,15 @@ def astar_ginasios(pc, peso=1.0, limite_estados=None, tempo_max=None, log=None, 
     return None
 
 
-# ------------------------------------------------ certificado de otimalidade
+# CERTIFICADO DE OTIMALIDADE
 def held_karp(pc, log=None, cb=None):
-    """
-    Programação dinâmica exata (Held-Karp) sobre (último ginásio, conjunto visitado).
-    Usa numpy e ~0,8 GB de RAM (tabela 2^24 x 24 em int16). Serve para CERTIFICAR
-    o ótimo global da rota: o A* com heurística admissível ponderada (peso>1) é rápido
-    mas não garante otimalidade; o A* exato (peso=1) em Python é impraticável para 24 ginásios.
-    Devolve (custo_otimo, ordem) com ordem = índices de pontos [0, g..., 25].
-    """
-    import numpy as np
+    # Programação dinâmica exata (Held-Karp) sobre (último ginásio, conjunto visitado).
+    # Usa numpy e ~0,8 GB de RAM (tabela 2^24 x 24 em int16). Serve para CERTIFICAR
+    # o ótimo global da rota: o A* com heurística admissível ponderada (peso>1) é rápido
+    # mas não garante otimalidade; o A* exato (peso=1) em Python é impraticável para 24 ginásios.
+    # Devolve (custo_otimo, ordem) com ordem = índices de pontos [0, g..., 25].
+    
+    
     NG = len(pc.ids)
     DEST = NG + 1
     D = np.array(pc.D, dtype=np.int32)
