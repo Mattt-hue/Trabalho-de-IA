@@ -2,6 +2,7 @@
 import pygame
 import sys, time, random
 from pyswip import Prolog, Functor, Variable, Query
+from planejador import decidir
 
 import pathlib
 current_path = str(pathlib.Path().resolve())
@@ -45,14 +46,8 @@ prolog.consult(pl_file)
 last_action = ""
 
 def decisao():
-
-    acao = ""    
-    
-    acoes = list(prolog.query("executa_acao(X)"))
-    if len(acoes) > 0:
-        acao = acoes[0]['X']
-
-    return acao
+    # O Prolog infere e escolhe o objetivo; o A* em Python planeja a rota
+    return decidir(prolog)
 
 
 def exec_prolog(a):
@@ -405,6 +400,3 @@ load()
 
 main_loop(screen)
 pygame.quit()
-
-
-
