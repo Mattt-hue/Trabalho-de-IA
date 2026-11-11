@@ -7,7 +7,7 @@
 
 :-consult('agente.pl').
 
-:-consult('mapa.pl').
+:-consult('mapa_facil.pl').
 
 delete([], _, []).
 delete([Elem|Tail], Del, Result) :-

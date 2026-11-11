@@ -9,7 +9,7 @@ current_path = str(pathlib.Path().resolve())
 
 elapsed_time = 0
 auto_play_tempo = 0.5
-auto_play = False # desligar para controlar manualmente
+auto_play = '--auto' in sys.argv # python gmap.py --auto: agente joga sozinho; sem a flag, controle manual
 show_map = False
 
 scale = 60
